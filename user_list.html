@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryCraft Messenger - User List</title>
+    <link rel="stylesheet" href="user_list.css">
+    <style>
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>
+            <p>Story_Craft <br>Users</p>
+            <a href="home.html"><button class="menu-btn">Home</button></a>
+            <a href="profile.html"><button class="menu-btn">Profile</button></a>
+            <a href="messages.html"><button class="menu-btn">Messages</button></a>
+        </h2>
+
+        <!-- Typing Loader -->
+        <div class="loader-container" id="loader">
+            <div class="typing-loader">StoryCraft_Messenger is Loading...</div>
+        </div>
+
+        <!-- User List -->
+        <ul class="user-list" id="userList" style="display: none;">
+            <!-- User list items will be populated here -->
+        </ul>
+    </div>
+
+    <div id="snackbar"></div>
+
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0_ysi2vyP6yq_KD-ZXXdavFJ5lWV_1c0",
+            authDomain: "storycraft-messenger.firebaseapp.com",
+            projectId: "storycraft-messenger",
+            storageBucket: "storycraft-messenger.appspot.com",
+            messagingSenderId: "292130563747",
+            appId: "1:292130563747:web:4ba6d1cb113232b50f4116",
+            measurementId: "G-F6GHJ1P402"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        async function displayUserList() {
+            const userListElement = document.getElementById('userList');
+            const loader = document.getElementById('loader');
+
+            userListElement.style.display = 'none'; // Hide user list
+            loader.style.display = 'flex'; // Show loader
+
+            try {
+                const querySnapshot = await getDocs(collection(db, 'users'));
+                userListElement.innerHTML = ''; // Clear list
+
+                querySnapshot.forEach(async (docSnapshot) => {
+                    const userData = docSnapshot.data();
+                    const listItem = document.createElement('li');
+
+                    const genderClass = userData.gender === 'female' ? 'female' : 'male';
+                    const followsRef = collection(db, 'follows');
+                    const followsQuery = query(followsRef, where('senderUid', '==', auth.currentUser.uid), where('receiverUid', '==', userData.uid));
+                    const followsSnapshot = await getDocs(followsQuery);
+
+                    const followButtonText = followsSnapshot.empty ? 'Follow' : 'Unfollow';
+                    const followButtonClass = userData.gender === 'female' ? 'follow-button female' : 'follow-button';
+                    const messageButtonClass = userData.gender === 'female' ? 'message-button female' : 'message-button';
+
+                    listItem.innerHTML = `
+                        <div style="display: flex; align-items: center;">
+                            <a href="profile.html?username=${userData.username}" style="text-decoration: none; display: flex; align-items: center;">
+                                <img src="${userData.profilePicUrl || 'https://res.cloudinary.com/dsfucbb9t/image/upload/v1733056696/rj6izupyngttde3xe3os.jpg'}" class="profile-photo" alt="Profile Photo">
+                                <span class="username ${genderClass}">@${userData.username}</span>
+                            </a>
+                        </div>
+                        <div class="user-actions">
+                            <button class="${followButtonClass}" onclick="toggleFollow('${userData.uid}', '${followButtonText}')">${followButtonText}</button>
+                            <button class="${messageButtonClass}" onclick="messageUser('${userData.username}')">Message</button>
+                        </div>
+                    `;
+                    userListElement.appendChild(listItem);
+                });
+
+                loader.style.display = 'none'; // Hide loader
+                userListElement.style.display = 'block'; // Show user list
+            } catch (error) {
+                console.error('Error fetching user list:', error);
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                displayUserList();
+            } else {
+                alert('No user is signed in.');
+                window.location.href = 'login.html';
+            }
+        });
+
+        window.toggleFollow = async (receiverUid, action) => { /* Function logic here */ };
+        window.messageUser = (username) => { window.location.href = `chat.html?username=${username}`; };
+    </script>
+</body>
+</html>

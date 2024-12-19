@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryCraft Messenger - Register</title>
+    <link rel="stylesheet" href="registration.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Sign Up to StoryCraft</h2>
+        <!-- First Name & Last Name -->
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="firstName" placeholder="First Name" required>
+        </div>
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="lastName" placeholder="Last Name" required>
+        </div>
+        <!-- Username -->
+        <div class="input-group">
+            <i class="fas fa-user-tag"></i>
+            <input type="text" id="username" placeholder="Username" required>
+            <div class="error-message" id="usernameError"></div>
+        </div>
+        <!-- Email -->
+        <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" placeholder="Email" required>
+            <div class="error-message" id="emailError"></div>
+        </div>
+        <!-- Date of Birth -->
+        <div class="input-group">
+            <i class="fas fa-calendar-alt"></i>
+            <input type="date" id="dob" required>
+        </div>
+        <!-- Gender -->
+        <div class="input-group">
+            <i class="fas fa-venus-mars"></i>
+            <select id="gender" required>
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <!-- Password -->
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="password" placeholder="Password" required>
+            <i class="fas fa-eye-slash toggle-password" id="togglePassword"></i>
+            <div class="error-message" id="passwordError"></div>
+        </div>
+        <!-- Confirm Password -->
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+        </div>
+        <div class="error-message" id="passwordMatchError"></div>
+        <div class="error-message" id="formError"></div>
+        <!-- Submit -->
+        <button id="registerBtn">Sign Up</button>
+        <p>Already have an account? <a href="login.html">Login</a></p>
+    </div>
+
+    <!-- Firebase and JavaScript -->
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0_ysi2vyP6yq_KD-ZXXdavFJ5lWV_1c0",
+            authDomain: "storycraft-messenger.firebaseapp.com",
+            projectId: "storycraft-messenger",
+            storageBucket: "storycraft-messenger.appspot.com",
+            messagingSenderId: "292130563747",
+            appId: "1:292130563747:web:4ba6d1cb113232b50f4116"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Redirect if user is already logged in
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is logged in, redirect to profile page
+                window.location.href = "profile.html";
+            }
+        });
+
+        // DOM Elements
+        const usernameInput = document.getElementById("username");
+        const usernameError = document.getElementById("usernameError");
+        const emailInput = document.getElementById("email");
+        const emailError = document.getElementById("emailError");
+        const passwordInput = document.getElementById("password");
+        const confirmPasswordInput = document.getElementById("confirmPassword");
+        const passwordError = document.getElementById("passwordError");
+        const passwordMatchError = document.getElementById("passwordMatchError");
+        const registerBtn = document.getElementById("registerBtn");
+        const formError = document.getElementById("formError");
+        const togglePassword = document.getElementById("togglePassword");
+
+        // Username validation
+        usernameInput.addEventListener("input", () => {
+            const username = usernameInput.value.trim();
+
+            // Validate format
+            const usernameRegex = /^[a-z0-9\-_]+$/;
+            if (!usernameRegex.test(username) && username !== "") {
+                usernameError.style.color = "red";
+                usernameError.innerText = "Invalid username! Only a-z, 0-9, -, _ allowed.";
+            } else {
+                usernameError.innerText = "";
+            }
+        });
+
+        // Email validation (basic format check)
+        emailInput.addEventListener("input", () => {
+            const email = emailInput.value.trim();
+            const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
+            if (!emailRegex.test(email) && email !== "") {
+                emailError.style.color = "red";
+                emailError.innerText = "Please enter a valid email address.";
+            } else {
+                emailError.innerText = "";
+            }
+        });
+
+        // Password validation (min 6 characters)
+        passwordInput.addEventListener("input", () => {
+            const password = passwordInput.value.trim();
+            if (password.length < 6) {
+                passwordError.style.color = "red";
+                passwordError.innerText = "Password must be at least 6 characters.";
+            } else {
+                passwordError.innerText = "";
+            }
+        });
+
+        // Toggle show/hide password
+        togglePassword.addEventListener("click", () => {
+            const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+            passwordInput.setAttribute("type", type);
+            togglePassword.classList.toggle("fa-eye");
+            togglePassword.classList.toggle("fa-eye-slash");
+        });
+
+        // Password matching validation
+        confirmPasswordInput.addEventListener("input", () => {
+            const password = passwordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+
+            if (password !== confirmPassword) {
+                passwordMatchError.style.color = "red";
+                passwordMatchError.innerText = "Passwords do not match!";
+            } else {
+                passwordMatchError.innerText = "";
+            }
+        });
+
+        // Registration logic
+        registerBtn.addEventListener("click", async () => {
+            const firstName = document.getElementById("firstName").value;
+            const lastName = document.getElementById("lastName").value;
+            const username = usernameInput.value.trim();
+            const email = emailInput.value.trim();
+            const dob = document.getElementById("dob").value;
+            const gender = document.getElementById("gender").value;
+            const password = passwordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+
+            formError.innerText = "";
+
+            // Validate form before submission
+            if (password !== confirmPassword) {
+                passwordMatchError.innerText = "Passwords do not match!";
+                return;
+            }
+
+            if (password.length < 6) {
+                passwordError.innerText = "Password must be at least 6 characters.";
+                return;
+            }
+
+            if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/.test(email)) {
+                emailError.innerText = "Please enter a valid email address.";
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                await updateProfile(user, { displayName: username });
+                await setDoc(doc(db, "users", user.uid), {
+                    firstName,
+                    lastName,
+                    username,
+                    email,
+                    dob,
+                    gender,
+                    uid: user.uid,
+                });
+
+                alert("Registration Successful!");
+                window.location.href = "profile.html";
+            } catch (error) {
+                formError.innerText = error.message;
+            }
+        });
+    </script>
+</body>
+</html>

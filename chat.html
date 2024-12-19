@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryCraft Chat</title>
+    <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+    <div class="container">
+        <div class="friends-list" id="friendsList">
+            <!-- Friends Profile Photos will be inserted here -->
+        </div>
+
+        <div class="chat-container">
+            <div class="header">
+                <img id="profilePic" src="https://res.cloudinary.com/dmnsrdlhy/image/upload/v1734503644/Digital_Marketer_LinkedIn_Profile_Picture_20241218_123115_0000_irmkbp.png" alt="Profile Photo" class="profile-photo clickable">
+                <div class="profile-info clickable">
+                    <span id="username" class="name">Select a friend</span>
+                    <span id="lastActive" class="last-active"></span>
+                </div>
+            </div>
+            <div class="chat-window" id="chatWindow">
+                <!-- Messages will appear here -->
+            </div>
+            <div class="footer">
+                <input type="text" id="messageInput" placeholder="Type a message...">
+                <button id="sendButton">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0_ysi2vyP6yq_KD-ZXXdavFJ5lWV_1c0",
+            authDomain: "storycraft-messenger.firebaseapp.com",
+            projectId: "storycraft-messenger",
+            storageBucket: "storycraft-messenger.appspot.com",
+            messagingSenderId: "292130563747",
+            appId: "1:292130563747:web:4ba6d1cb113232b50f4116"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let recipientUser = null;
+
+        const friendsList = document.getElementById("friendsList");
+        const chatWindow = document.getElementById("chatWindow");
+        const sendButton = document.getElementById("sendButton");
+        const messageInput = document.getElementById("messageInput");
+        const usernameSpan = document.getElementById("username");
+        const lastActiveSpan = document.getElementById("lastActive");
+        const profilePic = document.getElementById("profilePic");
+
+        // Helper functions for time format
+        function formatDate(date) {
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function getTimeAgo(timestamp) {
+            const now = new Date();
+            const messageTime = new Date(timestamp.seconds * 1000);
+            const diffInMinutes = Math.floor((now - messageTime) / 60000);
+
+            if (diffInMinutes < 1) return '<span class="time-ago just-now">Just now</span>';
+            if (diffInMinutes < 60) return `<span class="time-ago">${diffInMinutes} min ago</span>`;
+            const diffInHours = Math.floor(diffInMinutes / 60);
+            if (diffInHours < 24) return `<span class="time-ago">${diffInHours} hours ago</span>`;
+            const diffInDays = Math.floor(diffInMinutes / 1440);
+            if (diffInDays < 7) return `<span class="time-ago">${diffInDays} days ago</span>`;
+            return `<span class="time-ago">${formatDate(messageTime)}</span>`;
+        }
+
+        // Load Friends List with last message time sorting
+        async function loadFriends() {
+            const friendsQuery = query(collection(db, "users"));
+            const friendsSnapshot = await getDocs(friendsQuery);
+
+            const friends = [];
+            friendsSnapshot.forEach((doc) => {
+                const friend = doc.data();
+                friends.push({
+                    username: friend.username,
+                    profilePicUrl: friend.profilePicUrl || "https://via.placeholder.com/40?text=User",
+                    lastActive: friend.lastActive,
+                    id: doc.id
+                });
+            });
+
+            const friendMessages = {}; // Store the last message time for each friend
+            const messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "desc"));
+            const messagesSnapshot = await getDocs(messagesQuery);
+
+            // Loop through the messages to capture the latest message time for each friend
+            messagesSnapshot.forEach((doc) => {
+                const message = doc.data();
+                if (message.participants.includes(currentUser)) {
+                    message.participants.forEach(participant => {
+                        if (participant !== currentUser) {
+                            if (!friendMessages[participant] || message.timestamp.seconds > friendMessages[participant].seconds) {
+                                friendMessages[participant] = message.timestamp; // Capture the latest message time
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Sort the friends array based on the latest message timestamp
+            friends.sort((a, b) => {
+                const lastMessageA = friendMessages[a.username] || 0;
+                const lastMessageB = friendMessages[b.username] || 0;
+                return lastMessageB - lastMessageA; // Sort descending by timestamp
+            });
+
+            friendsList.innerHTML = ""; // Clear the existing list
+
+            // Add sorted friends to the list
+            friends.forEach((friend) => {
+                const profileImg = document.createElement("img");
+                profileImg.src = friend.profilePicUrl;
+                profileImg.alt = "Profile Photo";
+                profileImg.className = "friend-photo clickable";
+                profileImg.onclick = () => loadChatWithFriend(friend);
+                friendsList.appendChild(profileImg);
+            });
+        }
+
+        // Load Chat with Specific Friend
+        async function loadChatWithFriend(friend) {
+            recipientUser = friend;
+            usernameSpan.textContent = friend.username;
+            lastActiveSpan.textContent = `Last active: ${friend.lastActive || "Active Recently"}`;
+            profilePic.src = friend.profilePicUrl;
+
+            profilePic.onclick = () => window.location.href = `/profile.html?user=${friend.username}`;
+            document.querySelector(".profile-info").onclick = profilePic.onclick;
+
+            chatWindow.innerHTML = "";
+            const q = query(
+                collection(db, "messages"),
+                orderBy("timestamp", "asc"),
+                where("participants", "array-contains", currentUser)
+            );
+
+            let lastMessageDate = null;
+
+            onSnapshot(q, (snapshot) => {
+                chatWindow.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const message = doc.data();
+                    if (message.participants.includes(currentUser) && message.participants.includes(friend.username)) {
+                        const msgDiv = document.createElement("div");
+                        const msgTime = getTimeAgo(message.timestamp);
+                        const messageDate = new Date(message.timestamp.seconds * 1000);
+                        const messageDay = formatDate(messageDate);
+                        if (lastMessageDate !== messageDay) {
+                            const dateDiv = document.createElement("div");
+                            dateDiv.className = "message-date";
+                            dateDiv.textContent = messageDay;
+                            chatWindow.appendChild(dateDiv);
+                            lastMessageDate = messageDay;
+                        }
+
+                        msgDiv.className = `message ${message.sender === currentUser ? "you" : "them"}`;
+                        msgDiv.innerHTML = `
+                            <div class="message-content">
+                                <p>${message.message}</p>
+                                <span class="timestamp">${msgTime}</span>
+                                ${message.sender === currentUser ? `<span class="status">${message.status === "sent" ? "Sent" : "Read"}</span>` : ""}
+                            </div>
+                        `;
+                        chatWindow.appendChild(msgDiv);
+                    }
+                });
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            });
+
+            // Mark message as read when the recipient opens the chat window
+            const messagesQuery = query(
+                collection(db, "messages"),
+                orderBy("timestamp", "asc")
+            );
+            const messagesSnapshot = await getDocs(messagesQuery);
+            messagesSnapshot.forEach(async (doc) => {
+                const message = doc.data();
+                if (message.sender !== currentUser && message.status === "sent" && message.participants.includes(currentUser)) {
+                    const messageRef = doc(db, "messages", doc.id);
+                    await updateDoc(messageRef, {
+                        status: "read"
+                    });
+                }
+            });
+        }
+
+        // Send Message
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !recipientUser) return;
+
+            const messageRef = await addDoc(collection(db, "messages"), {
+                sender: currentUser,
+                participants: [currentUser, recipientUser.username],
+                message: text,
+                timestamp: serverTimestamp(),
+                status: "sent"
+            });
+
+            messageInput.value = "";
+        }
+
+        sendButton.onclick = sendMessage;
+
+        // Firebase Authentication
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user.displayName || user.email;
+                loadFriends();
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+    </script>
+</body>
+</html>

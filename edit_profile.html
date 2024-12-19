@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Profile</title>
+  <link rel="stylesheet" href="edit_profile.css">
+  <!-- Cloudinary Widget Library -->
+  <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
+</head>
+<body>
+
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+    <div></div>
+  </div>
+
+  <div class="edit-profile-container">
+    <!-- Back Button -->
+    <button class="back-btn" onclick="window.location.href='profile.html'">Back</button>
+    
+    <h2>Edit Profile</h2>
+    
+    <!-- Profile Picture Update Section -->
+    <div class="profile-pic-section">
+      <label class="photo-lebel" for="profile-pic">Update Profile Picture:</label><br>
+      
+      <img id="profile-pic-preview" class="p-photo-preview" src="" alt="Current Profile Picture">
+      
+      <input class="photo-input" type="file" id="profile-pic" name="profile-pic" accept="image/*">
+      
+    </div>
+    
+    <!-- Cover Photo Update Section -->
+    <div class="cover-photo-section">
+      <label class="photo-lebel" for="cover-photo">Update Cover Photo:</label><br>
+      
+      <img id="cover-photo-preview" class="c-photo-preview" src="" alt="Current Cover Photo">
+      
+      <input class="photo-input" type="file" id="cover-photo" name="cover-photo" accept="image/*">
+
+
+    </div>
+
+    <!-- Name Section in one line -->
+    <div class="input-group-row">
+      <div class="input-group">
+        <label for="first-name">First Name:</label>
+        <input type="text" id="first-name" name="first-name" placeholder="Enter First Name">
+      </div>
+      <div class="input-group">
+        <label for="last-name">Last Name:</label>
+        <input type="text" id="last-name" name="last-name" placeholder="Enter Last Name">
+      </div>
+    </div>
+
+    <!-- Date of Birth, Gender, Relationship Status in one line -->
+    <div class="input-group-row">
+      <div class="input-group">
+        <label for="dob">Date of Birth:</label>
+        <input type="date" id="dob" name="dob">
+      </div>
+      <div class="input-group">
+        <label for="gender">Gender:</label>
+        <select id="gender" name="gender">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="relationship">Relationship Status:</label>
+        <select id="relationship" name="relationship">
+          <option value="single">Single</option>
+          <option value="in-a-relationship">In a Relationship</option>
+          <option value="complicated">It's Complicated</option>
+          <option value="married">Married</option>
+          <option value="divorced">Divorced</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Bio Section -->
+    <div class="input-group">
+      <label for="bio">Bio:</label>
+      <textarea id="bio" name="bio" placeholder="Write something about yourself..."></textarea>
+    </div>
+
+    <!-- Email Section -->
+    <div class="input-group">
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" placeholder="Enter your email">
+    </div>
+
+    <!-- Phone Number Section -->
+    <div class="input-group">
+      <label for="phone">Phone Number:</label>
+      <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+    </div>
+
+    <!-- Educational Info Section -->
+    <div class="input-group">
+      <label for="education">Educational Info:</label>
+      <textarea id="education" name="education" placeholder="Write about your educational background..."></textarea>
+    </div>
+
+    <!-- Works Info Section -->
+    <div class="input-group">
+      <label for="works-info">Works Info:</label>
+      <textarea id="works-info" name="works-info" placeholder="Write about your works..."></textarea>
+    </div>
+
+    <!-- Lives In Section -->
+    <div class="input-group">
+      <label for="location">Lives In Location:</label>
+      <input type="text" id="location" name="location" placeholder="Enter your location">
+    </div>
+
+    <!-- Favourite Quote Section -->
+    <div class="input-group">
+      <label for="quote">Favourite Quote:</label>
+      <textarea id="quote" name="quote" placeholder="Write your favourite quote..."></textarea>
+    </div>
+    
+    <!-- Save Button -->
+    <button class="save-btn" id="saveProfileBtn">Save Changes</button>
+  </div>
+
+<script type="module">
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0_ysi2vyP6yq_KD-ZXXdavFJ5lWV_1c0",
+        authDomain: "storycraft-messenger.firebaseapp.com",
+        projectId: "storycraft-messenger",
+        storageBucket: "storycraft-messenger.appspot.com",
+        messagingSenderId: "292130563747",
+        appId: "1:292130563747:web:4ba6d1cb113232b50f4116"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const loadingSpinner = document.getElementById("loadingSpinner");
+
+    function showLoadingSpinner() {
+        loadingSpinner.style.display = "block";
+    }
+
+    function hideLoadingSpinner() {
+        loadingSpinner.style.display = "none";
+    }
+
+    async function getUserData(uid) {
+        try {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            return userDoc.exists() ? userDoc.data() : null;
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            return null;
+        }
+    }
+
+    function previewImage(input, previewId) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById(previewId).src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            try {
+                const userData = await getUserData(user.uid);
+                if (userData) {
+                    document.getElementById("first-name").value = userData.firstName || "";
+                    document.getElementById("last-name").value = userData.lastName || "";
+                    document.getElementById("bio").value = userData.bio || "";
+                    document.getElementById("dob").value = userData.dob || "";
+                    document.getElementById("gender").value = userData.gender || "male";
+                    document.getElementById("email").value = userData.email || "";
+                    document.getElementById("phone").value = userData.phone || "";
+                    document.getElementById("education").value = userData.education || "";
+                    document.getElementById("works-info").value = userData.works || "";
+                    document.getElementById("location").value = userData.location || "";
+                    document.getElementById("quote").value = userData.quote || "";
+                    document.getElementById("relationship").value = userData.relationship || "single";
+
+                    if (userData.profilePicUrl) {
+                        document.getElementById("profile-pic-preview").src = userData.profilePicUrl;
+                    }
+
+                    if (userData.coverPhotoUrl) {
+                        document.getElementById("cover-photo-preview").src = userData.coverPhotoUrl;
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+                alert("Error loading user data.");
+            }
+        } else {
+            alert("No user is signed in.");
+            window.location.href = "login.html";
+        }
+    });
+
+    document.getElementById("profile-pic").addEventListener("change", (e) => {
+        previewImage(e.target, "profile-pic-preview");
+    });
+
+    document.getElementById("cover-photo").addEventListener("change", (e) => {
+        previewImage(e.target, "cover-photo-preview");
+    });
+
+    document.getElementById("saveProfileBtn").addEventListener("click", async () => {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("No user is signed in.");
+            return;
+        }
+
+        const data = {
+            firstName: document.getElementById("first-name").value,
+            lastName: document.getElementById("last-name").value,
+            bio: document.getElementById("bio").value,
+            dob: document.getElementById("dob").value,
+            gender: document.getElementById("gender").value,
+            email: document.getElementById("email").value,
+            phone: document.getElementById("phone").value,
+            education: document.getElementById("education").value,
+            works: document.getElementById("works-info").value,
+            location: document.getElementById("location").value,
+            quote: document.getElementById("quote").value,
+            relationship: document.getElementById("relationship").value,
+        };
+
+        const profilePicFile = document.getElementById("profile-pic").files[0];
+        const coverPhotoFile = document.getElementById("cover-photo").files[0];
+
+        try {
+            showLoadingSpinner();
+            if (profilePicFile) {
+                const profilePicUrl = await uploadImage(profilePicFile, "profile_pictures");
+                data.profilePicUrl = profilePicUrl;
+            }
+
+            if (coverPhotoFile) {
+                const coverPhotoUrl = await uploadImage(coverPhotoFile, "cover_photos");
+                data.coverPhotoUrl = coverPhotoUrl;
+            }
+
+            await updateDoc(doc(db, "users", user.uid), data);
+            alert("Profile updated successfully.");
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            alert("Error updating profile.");
+        } finally {
+            hideLoadingSpinner();
+        }
+    });
+
+    function uploadImage(file, folder) {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", "StoryCraft_Messenger");
+            fetch(`https://api.cloudinary.com/v1_1/dmnsrdlhy/image/upload`, {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => resolve(data.secure_url))
+                .catch((error) => reject(error));
+        });
+    }
+</script>
+</body>
+</html>

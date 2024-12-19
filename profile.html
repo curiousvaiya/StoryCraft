@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Page</title>
+    <link rel="stylesheet" href="profile.css">
+    <!-- Font Awesome Icon Library -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+       <!-- Typing Loader -->
+        <div class="loader-container" id="preloader">
+            <div class="typing-loader">StoryCraft_Messenger is Loading...</div>
+        </div>
+
+    <div class="profile-page" style="display: none;" id="profileContainer">
+        <!-- Cover Photo -->
+        <div class="cover-photo" id="coverPhoto">
+            <img src="https://res.cloudinary.com/dsfucbb9t/image/upload/v1733056696/rj6izupyngttde3xe3os.jpg" alt="Cover Photo">
+        </div>
+        <!-- Profile Section -->
+        <div class="profile-section">
+            <div class="profile-photo" id="profilePic">
+                <img src="https://res.cloudinary.com/dsfucbb9t/image/upload/v1733056678/c82faqv9mjei3ittqguz.jog " alt="Profile Photo">
+            </div>
+            <h1 class="profile-name" id="name">Muhammad Shamim Islam <span class="active-status"></span></h1>
+            <p class="profile-username" id="username">@muhammad_shamim</p>
+        </div>
+    </div>
+        <!-- Followers Info -->
+        <div class="follow-info">
+            <div><strong id="followersCount">279</strong> Followers</div>
+            <div><strong id="followingCount">23</strong> Following</div>
+        </div>
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="edit-profile" id="profileActionBtn"><i class="fas fa-user-edit"></i> Edit Profile</button>
+            <button class="message-btn" id="messageBtn" style="display: none;"><i class="fas fa-envelope"></i> Message</button>
+        </div>
+        <!-- Bio Section -->
+        <div class="bio-section">
+          <div>
+            <i class="fa-solid fa-quote-left"></i>
+          </div>
+            <p id="bio">...!</p>
+            <div class="bio-details">
+                <div><i class="fas fa-briefcase"></i> <span id="education">Educational Status</span></div>
+                <div><i class="fas fa-calendar-day"></i> <span id="dob">Date Of Birth</span></div>
+                <div><i class="fas fa-street-view"></i> <span id="location">Live in Location</span></div>
+                <div><i class="fas fa-chevron-circle-right" id="aboutMoreBtn"></i> About More</div>
+            </div>
+        </div>
+        
+        
+        <!-- Social Info -->
+        
+        
+        <div class="profile-reaction">
+            <div id="likeSection" onclick="incrementLikes()">
+                <i class="fas fa-heart"></i> <span id="likeCount">274</span> Users Liked
+            </div>
+            <div onclick="window.location.href='profile_comments.html'">
+                <i class="fas fa-comment-alt"></i> 0 Comments
+            </div>
+        </div>
+        
+        
+    
+    <!------------------------------------->
+
+    <!-- Snackbar Notification -->
+    <div id="snackbar"></div>
+
+
+    <!-- Modal for About More --
+     <div class="modal" id="aboutMoreModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="aboutMoreTitle">About firstName + lastName</h2>
+            <p id="aboutMoreContent">Here you can add more details about the profile...</p>
+            <!-- Add your profile-related details here --
+          
+        </div>
+    </div>
+    <----->
+     <!-- Modal for About More -->
+     <!-- Modal HTML structure -->
+     <!-- Modal for About More -->
+     <!-- Modal for About More -->
+
+<div class="modal" id="aboutMoreModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 id="aboutMoreTitle">About <span id="fullNameModal"></span></h2>
+
+        
+        <div class="user-details">
+    <div class="header">User Details</div>
+    <div class="info">
+      
+        <p><i class="fa-solid fa-hand-holding-heart"></i> <span>Bio:</span> <strong><span id="bioModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-user"></i> <span>Username:</span> <strong> <span id="usernameModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-calendar-day"></i> <span>Age: </span> <strong> <span id="ageModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-location-dot"></i> <span>Lives In:</span> <strong> <span id="locationModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-user-graduate"></i> <span>Education: </span> <strong> <span id="educationModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-briefcase"></i> <span>Works Info: </span> <strong> <span id="worksModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-mars-and-venus"></i> <span>Gender: </span> <strong> <span id="genderModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-heart"></i> <span>Relationship: </span> <strong> <span id="relationshipModal"></span></strong></p>
+        
+        <p><i class="fa-solid fa-quote-left"></i> <span>  </span> <strong><span id="quoteModal"> </span></strong></p>
+    </div>
+</div>
+    </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA0_ysi2vyP6yq_KD-ZXXdavFJ5lWV_1c0",
+    authDomain: "storycraft-messenger.firebaseapp.com",
+    projectId: "storycraft-messenger",
+    storageBucket: "storycraft-messenger.firebasestorage.app",
+    messagingSenderId: "292130563747",
+    appId: "1:292130563747:web:4ba6d1cb113232b50f4116",
+    measurementId: "G-F6GHJ1P402"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  function calculateAge(dob) {
+    const today = new Date();
+    const birthDate = new Date(dob);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const month = today.getMonth();
+    if (month < birthDate.getMonth() || (month === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  async function displayUserProfile(username) {
+    try {
+      console.log("Fetching user profile for:", username);
+
+      const userQuery = query(collection(db, "users"), where("username", "==", username));
+      const unsubscribe = onSnapshot(userQuery, (querySnapshot) => {
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          const userData = userDoc.data();
+
+          document.getElementById('fullNameModal').textContent = `${userData.firstName} ${userData.lastName}`;
+          document.getElementById('bioModal').textContent = userData.bio || 'no bio!';
+          document.getElementById('bioModal').style.textAlign = "center";  
+          document.getElementById('usernameModal').textContent = `@${userData.username}`;
+          document.getElementById('relationshipModal').textContent = userData.relationship || 'Complicated';
+          
+          const age = calculateAge(userData.dob);
+          document.getElementById('ageModal').textContent = `${age} years old`;
+
+          document.getElementById('locationModal').textContent = userData.location || 'Somewhere in earth !';
+          document.getElementById('educationModal').textContent = userData.education || 'Not Shared.';
+          document.getElementById('worksModal').textContent = userData.works || 'Not Shared.';
+          document.getElementById('genderModal').textContent = userData.gender || 'Others';
+          document.getElementById('quoteModal').textContent = userData.quote || 'Not Shared.';
+
+          openModal();
+        } else {
+          // console.error("No user found with username:", username);
+          // Optionally, show a message to the user if no profile is found
+          //alert('No user found with the provided username.');
+        }
+      });
+
+      return unsubscribe;
+
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      alert("An error occurred while fetching the user profile.");
+    }
+  }
+
+  function openModal() {
+    let modal = document.getElementById('aboutMoreModal');
+    modal.style.display = 'block';
+    setTimeout(() => {
+      //modal.classList.add('active');
+    }, 10);
+  }
+
+  function closeModal() {
+    let modal = document.getElementById('aboutMoreModal');
+    modal.classList.remove('active');
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 500);
+  }
+
+  const username = getQueryParam('username');
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("User is signed in:", user.uid);
+      displayUserProfile(username);
+    } else {
+      console.error("No user is signed in.");
+      window.location.href = "login.html";
+    }
+  });
+</script>
+
+
+
+
+
+    <!-- Script to handle modal and likes -->
+    <script>
+        function incrementLikes() {
+            let likeCount = document.getElementById('likeCount');
+            let currentCount = parseInt(likeCount.innerText, 10);
+            likeCount.innerText = currentCount + 1;
+        }
+
+        document.getElementById('aboutMoreBtn').addEventListener('click', function() {
+            let modal = document.getElementById('aboutMoreModal');
+            modal.style.display = 'block';
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+        });
+
+        function closeModal() {
+            let modal = document.getElementById('aboutMoreModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 500);
+        }
+
+        function showSnackbar(message) {
+            const snackbar = document.getElementById("snackbar");
+            snackbar.textContent = message;
+            snackbar.className = "show";
+            setTimeout(() => {
+                snackbar.className = snackbar.className.replace("show", "");
+            }, 3000);
+        }
+    </script>
+    <!------->
+    
+    
+    <!---------- Main Script V : 1.0  ------->
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, query, where, collection, getDocs, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0_ysi2vyP6yq_KD-ZXXdavFJ5lWV_1c0",
+            authDomain: "storycraft-messenger.firebaseapp.com",
+            databaseURL: "https://storycraft-messenger-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "storycraft-messenger",
+            storageBucket: "storycraft-messenger.appspot.com",
+            messagingSenderId: "292130563747",
+            appId: "1:292130563747:web:4ba6d1cb113232b50f4116",
+            measurementId: "G-F6GHJ1P402"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        async function displayUserProfile(username) {
+            try {
+                const userQuery = query(collection(db, "users"), where("username", "==", username));
+                const querySnapshot = await getDocs(userQuery);
+                if (!querySnapshot.empty) {
+                    const userDoc = querySnapshot.docs[0];
+                    const userData = userDoc.data();
+
+                    document.getElementById('name').textContent = `${userData.firstName} ${userData.lastName}`;
+                    document.getElementById('username').textContent = `@${userData.username}`;
+                    document.getElementById('bio').textContent = ` ${userData.bio}` || "No bio available";
+                    document.getElementById('education').textContent = userData.education || "Educational Status";
+                    document.getElementById('dob').textContent = userData.dob || "Date Of Birth";
+                    document.getElementById('location').textContent = userData.location || "Live in Location";
+                    document.getElementById('likeCount').textContent = userData.reactions || 0;
+
+                    document.getElementById('profilePic').querySelector('img').src = userData.profilePicUrl || "https://res.cloudinary.com/dsfucbb9t/image/upload/v1733056678/c82faqv9mjei3ittqguz.jpg";
+                    document.getElementById('coverPhoto').querySelector('img').src = userData.coverPhotoUrl || "https://res.cloudinary.com/dsfucbb9t/image/upload/v1733056696/rj6izupyngttde3xe3os.jpg";
+
+                    const profileActionBtn = document.getElementById('profileActionBtn');
+                    const messageBtn = document.getElementById('messageBtn');
+                    if (auth.currentUser.uid === userData.uid) {
+                        // নিজের প্রোফাইল
+                        profileActionBtn.textContent = 'Edit Profile';
+                        profileActionBtn.addEventListener('click', () => window.location.href = `edit_profile.html?username=${userData.username}`);
+                        messageBtn.style.display = 'none';
+                    } else {
+                        // অন্যের প্রোফাইল
+                        const isFollowing = await checkIfFollowing(userData.uid);
+                        profileActionBtn.textContent = isFollowing ? 'Unfollow' : '+ Follow';
+                        profileActionBtn.onclick = () => toggleFollow(userData.uid, profileActionBtn);
+
+                        messageBtn.style.display = 'block';
+                        messageBtn.addEventListener('click', () => window.location.href = `chat.html?username=${userData.username}`);
+                    }
+
+                    await updateFollowCounts(userDoc.id);
+
+                    // Hide preloader and show profile
+                    document.getElementById('preloader').style.display = 'none';
+                    document.getElementById('profileContainer').style.display = 'block';
+                } else {
+                    alert("User not found!");
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                alert("Error: " + error.message);
+            }
+        }
+
+        async function updateFollowCounts(userId) {
+            try {
+                const followersQuery = query(collection(db, "follows"), where("receiverUid", "==", userId));
+                const followersSnapshot = await getDocs(followersQuery);
+                const followersCount = followersSnapshot.size;
+
+                const followingQuery = query(collection(db, "follows"), where("senderUid", "==", userId));
+                const followingSnapshot = await getDocs(followingQuery);
+                const followingCount = followingSnapshot.size;
+
+                document.getElementById('followersCount').textContent = followersCount;
+                document.getElementById('followingCount').textContent = followingCount;
+            } catch (error) {
+                console.error("Error updating follow counts:", error);
+            }
+        }
+
+        async function checkIfFollowing(followedUid) {
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const followQuery = query(collection(db, "follows"), where("senderUid", "==", currentUser.uid), where("receiverUid", "==", followedUid));
+                const followSnapshot = await getDocs(followQuery);
+                return !followSnapshot.empty;
+            }
+            return false;
+        }
+
+        async function toggleFollow(followedUid, button) {
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const followQuery = query(collection(db, "follows"), where("senderUid", "==", currentUser.uid), where("receiverUid", "==", followedUid));
+                const followSnapshot = await getDocs(followQuery);
+
+                if (!followSnapshot.empty) {
+                    // Unfollow
+                    const followDocId = followSnapshot.docs[0].id;
+                    await deleteDoc(doc(db, "follows", followDocId));
+                    showSnackbar("User unfollowed successfully!");
+                    button.textContent = '+ Follow';
+                } else {
+                    // Follow
+                    await addDoc(collection(db, "follows"), {
+                        senderUid: currentUser.uid,
+                        receiverUid: followedUid,
+                        timestamp: serverTimestamp()
+                    });
+                    showSnackbar("User followed successfully!");
+                    button.textContent = '— Unfollow';
+                }
+
+                await updateFollowCounts(followedUid);
+            } else {
+                alert("No user is signed in.");
+            }
+        }
+
+        const username = getQueryParam('username');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (!username) {
+                    window.location.href = `profile.html?username=${userDoc.data().username}`;
+                } else {
+                    displayUserProfile(username);
+                }
+            } else {
+                alert("No user is signed in.");
+                window.location.href = "login.html";
+            }
+        });
+    </script> 
+    
+</body>
+</html>

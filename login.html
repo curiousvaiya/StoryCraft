@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryCraft: User Login</title>
+  <link rel="stylesheet" type="text/css" href="login.css">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0_ysi2vyP6yq_KD-ZXXdavFJ5lWV_1c0",
+      authDomain: "storycraft-messenger.firebaseapp.com",
+      projectId: "storycraft-messenger",
+      storageBucket: "storycraft-messenger.appspot.com",
+      messagingSenderId: "292130563747",
+      appId: "1:292130563747:web:4ba6d1cb113232b50f4116",
+      measurementId: "G-F6GHJ1P402"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Redirect if the user is already logged in
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = 'messages.html';
+      }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorMessage = document.getElementById('error-message');
+
+      errorMessage.textContent = ''; // Clear previous error messages
+
+      try {
+        // Perform login with email and password
+        await signInWithEmailAndPassword(auth, email, password);
+
+        // Redirect to the messages page after successful login
+        window.location.href = 'messages.html';
+      } catch (error) {
+        console.error('Login failed:', error);
+
+        // Display error messages
+        if (error.code === 'auth/user-not-found') {
+          errorMessage.textContent = 'No account found with this email!';
+        } else if (error.code === 'auth/wrong-password') {
+          errorMessage.textContent = 'Incorrect password!';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage.textContent = 'Invalid email format!';
+        } else {
+          errorMessage.textContent = 'An unexpected error occurred. Please try again later.';
+        }
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="login-form">
+    <h2>Login to StoryCraft</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+      </div>
+      <div class="form-group">
+        <button type="submit">Login</button>
+      </div>
+      <div id="error-message" style="color: red; margin-top: 10px;"></div>
+    </form>
+    <p>Don't have an account? <a href="registration.html">Sign up here</a></p>
+  </div>
+</body>
+</html>
